@@ -1,12 +1,16 @@
 open Core
 
-type skey = SpaceKey of string
-
 let make_floor_str floor =
   let postfix =
     match abs floor with 1 -> "st" | 2 -> "nd" | 3 -> "rd" | _ -> "th"
   in
   sprintf "%d%s floor" floor postfix
+
+module SpaceKey = struct
+  type t = string [@@deriving show]
+
+  let make ~floor ~number = sprintf "%s %d" (make_floor_str floor) number
+end
 
 module Space = struct
   type t = {
@@ -17,8 +21,7 @@ module Space = struct
     autoRelease : bool;
     reservedBy : string;
     reservedById : string;
-    reservedTime : Time_ns.t;
-        [@printer fun fmt v -> fprintf fmt "%s" (Time_ns.to_string_utc v)]
+    reservedTime : Time_ns.t; [@printer Utils.pp_time]
   }
   [@@deriving show]
 
@@ -45,7 +48,7 @@ module Space = struct
   let status_description s =
     if s.reserved then sprintf "<@%s>" s.reservedById else ""
 
-  let key s = SpaceKey (sprintf "%s %d" (make_floor_str s.floor) s.number)
+  let key s = SpaceKey.make ~floor:s.floor ~number:s.number
 
   let is_smaller s other =
     match s with
