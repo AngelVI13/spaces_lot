@@ -1,6 +1,3 @@
-open Spaces_lot.Lot
+(*open Spaces_lot.Log*)
 
-
-let () = 
-  Lot.do_sth;
-  print_endline "Hello, World!"
+let () = print_endline "Hello World"

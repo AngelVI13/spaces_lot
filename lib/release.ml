@@ -1,5 +1,6 @@
 open Core
 open Space
+open Log
 
 module ReleaseInfo = struct
   type t = {
@@ -43,8 +44,14 @@ module ReleaseInfo = struct
       view_id = None;
     }
 
+  let shout fmt = Printf.ksprintf (fun s -> s ^ "!") fmt
+
   let mark_submitted r ~releaser =
     (*TODO: how to do logging?*)
+    (*shout "Hello world %s %s" releaser (show r);*)
+    let v = shout "Hello world %s %s" releaser (show r) in
+    printf "%s" v;
+    Log.info "Hello world";
     printf "ReleaseInfo Submitted: releaser=%s; info=%s" releaser (show r);
     (* Need to reset view IDs as they are no longer needed.*)
     (* If we don't reset them and user tries to release another*)
@@ -65,17 +72,14 @@ module ReleaseInfo = struct
   let mark_cancelled r =
     printf "ReleaseInfo Cancelled: info=%s" (show r);
     { r with cancelled = true }
+
+  (** Checks if data is present in the release. Fields like `releaser_id`,
+      `owner_id`, `owner_name` and `space_key` are required during release
+      creation so they are not checked here *)
+  let is_data_present r =
+    Option.is_some r.start_date && Option.is_some r.end_date
 end
 
-(*func (i *ReleaseInfo) DataPresent() bool {*)
-(*	return (i.ReleaserId != "" &&*)
-(*		i.OwnerId != "" &&*)
-(*		i.OwnerName != "" &&*)
-(*		i.Space != nil &&*)
-(*		i.StartDate != nil &&*)
-(*		i.EndDate != nil)*)
-(*}*)
-(**)
 (*func (i *ReleaseInfo) Check() string {*)
 (*	if !i.DataPresent() {*)
 (*		return fmt.Sprintf*)
