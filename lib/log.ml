@@ -1,37 +1,25 @@
 open Core
 
-module Log = struct
-  type level = Debug | Info | Warning | Error
-  [@@deriving show { with_path = false }]
+(*TODO: add support for writing to file if thats how the user setup the logging*)
+(*TODO: add support for different time/message formats *)
+type level = Debug | Info | Warning | Error
+[@@deriving show { with_path = false }]
 
-  let _format_output level s =
-    let now = Time_ns.now () |> Time_ns.to_string_utc in
-    sprintf "%s: %s: %s" now (show_level level) s
+(* NOTE: here fmt is a polymorphic format type. It has to come as last argument
+   because ocaml treats it in a special way *)
+let _log level fmt =
+  (* NOTE: Here we can also use Printf.ksprintf and the result will be
+     identical. Format.kasprintf is more powerful and allows for advanced
+     pretty printing, indentations etc.*)
+  Format.kasprintf
+    (fun s ->
+      let now = Time_ns.now () |> Time_ns.to_string_utc in
+      printf "%s: %s: %s\n" now (show_level level) s)
+    fmt
 
-  let _log level fmt =
-    let out = Printf.ksprintf (_format_output level) fmt in
-    printf "%s" out
-
-  let debug = _log Debug
-  let info = _log Info
-  let warn = _log Warning
-  let error = _log Error
-end
-
-let shout fmt = Printf.ksprintf (fun s -> s ^ "!") fmt
-let logv fmt = printf "%s" (Printf.ksprintf (fun s -> s ^ "!") fmt)
-let my_printf = Format.kfprintf (fun _ -> ()) Format.std_formatter
-
-let%expect_test "log.debug" =
-  Log.debug "hello world";
-  [%expect {| 2025-04-25 13:15:13.773326572Z: Debug: hello world |}]
-
-let%expect_test "log.debug with format" =
-  let x = "world" in
-  let res = shout "hello %s" x in
-  printf "%s" res;
-  [%expect {| hello world! |}]
-
-let%expect_test "gptk with format" =
-  my_printf "Number: %d, Word: %s\n" 42 "hello";
-  [%expect {| Number: 42, Word: hello |}]
+(* NOTE: Here we have to specify the fmt argument and explicitly pass it down to our
+   closure because it's a special polymorphic format type *)
+let debug fmt = _log Debug fmt
+let info fmt = _log Info fmt
+let warn fmt = _log Warning fmt
+let error fmt = _log Error fmt

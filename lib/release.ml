@@ -1,6 +1,5 @@
 open Core
 open Space
-open Log
 
 module ReleaseInfo = struct
   type t = {
@@ -47,12 +46,7 @@ module ReleaseInfo = struct
   let shout fmt = Printf.ksprintf (fun s -> s ^ "!") fmt
 
   let mark_submitted r ~releaser =
-    (*TODO: how to do logging?*)
-    (*shout "Hello world %s %s" releaser (show r);*)
-    let v = shout "Hello world %s %s" releaser (show r) in
-    printf "%s" v;
-    Log.info "Hello world";
-    printf "ReleaseInfo Submitted: releaser=%s; info=%s" releaser (show r);
+    Log.info "ReleaseInfo Submitted: releaser=%s; info=%s" releaser (show r);
     (* Need to reset view IDs as they are no longer needed.*)
     (* If we don't reset them and user tries to release another*)
     (* space without closing the parent model -> GetByViewId can return*)
