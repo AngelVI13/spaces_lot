@@ -8,7 +8,16 @@ let pp_time_opt fmt = function
 
 let is_date_range_valid start_date end_date =
   let _, _ = (start_date, end_date) in
+  let now = Time_ns.now () in
+  (*NOTE: to use more complex time utilities (timezones etc.) you have to add
+  `core_unix` and `core_unix.time_unix` libraries in your `dune` file.*)
+  let today = Time_ns.to_date ~zone:(force Time_float_unix.Zone.local) now in
+  printf "%s\n" (Date.to_string today);
   Ok ()
+
+let%expect_test "is_date_range_valid" =
+  let _ = is_date_range_valid "" "" in
+  [%expect {| 2025-04-26 |}]
 
 (*func CheckDateRange(start, end time.Time) string {*)
 (*	today := time.Now()*)

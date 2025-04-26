@@ -3,4 +3,4 @@
  (inline_tests)
  (preprocess 
    (pps ppx_deriving.show ppx_deriving.enum ppx_inline_test ppx_expect))
- (libraries core fmt))
+ (libraries core core_unix core_unix.time_unix fmt))
