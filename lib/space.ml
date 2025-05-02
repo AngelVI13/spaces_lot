@@ -1,21 +1,10 @@
 open Core
 
-let make_floor_str floor =
-  let postfix =
-    match abs floor with 1 -> "st" | 2 -> "nd" | 3 -> "rd" | _ -> "th"
-  in
-  sprintf "%d%s floor" floor postfix
-
-module SpaceKey = struct
-  type t = string [@@deriving show]
-
-  let make ~floor ~number = sprintf "%s %d" (make_floor_str floor) number
-end
-
 module Space = struct
   type t = {
     number : int;
     floor : int;
+    key : Space_key.t;
     description : string;
     reserved : bool;
     autoRelease : bool;
@@ -29,6 +18,7 @@ module Space = struct
     {
       number;
       floor;
+      key = Space_key.make ~floor ~number;
       description;
       reserved = false;
       autoRelease = false;
@@ -47,8 +37,6 @@ module Space = struct
   (** returns empty string if space is free, otherwise returns who reserved it*)
   let status_description s =
     if s.reserved then sprintf "<@%s>" s.reservedById else ""
-
-  let key s = SpaceKey.make ~floor:s.floor ~number:s.number
 
   let is_smaller s other =
     match s with

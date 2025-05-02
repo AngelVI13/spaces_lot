@@ -1,14 +1,13 @@
 open Core
-open Space
 
 module ReleaseInfo = struct
   type t = {
     releaser_id : string;
     owner_id : string;
     owner_name : string;
-    space_key : SpaceKey.t;
-    start_date : Time_ns.t option; [@printer Utils.pp_time_opt]
-    end_date : Time_ns.t option; [@printer Utils.pp_time_opt]
+    space_key : Space_key.t;
+    start_date : Date.t option; [@printer Utils.pp_date_opt]
+    end_date : Date.t option; [@printer Utils.pp_date_opt]
     cancelled : bool;
     submitted : bool;
     submitted_time : Time_ns.t option; [@printer Utils.pp_time_opt]
@@ -72,19 +71,31 @@ module ReleaseInfo = struct
       creation so they are not checked here *)
   let is_data_present r =
     Option.is_some r.start_date && Option.is_some r.end_date
+
+  (** Checks if release dates are present and valid i.e. today <= start_date <=
+      end_date *)
+  let is_valid r =
+    if not (is_data_present r) then
+      Or_error.error_s
+        [%message
+          "Missing date information for temporary release of space"
+            (r.space_key : Space_key.t)
+            (r.start_date : _ option)
+            (r.end_date : _ option)]
+    else
+      let today = Utils.today_date () in
+      let start_date, end_date =
+        match (r.start_date, r.end_date) with
+        | Some s, Some e -> (s, e)
+        | _ -> assert false
+      in
+      Utils.is_date_range_valid ~today ~start_date ~end_date
 end
 
-(*func (i *ReleaseInfo) Check() string {*)
-(*	if !i.DataPresent() {*)
-(*		return fmt.Sprintf*)
-(*			"Missing date information for temporary release of space (%s)",*)
-(*			i.Space.Key(),*)
-(*		)*)
-(*	}*)
-(**)
-(*	return common.CheckDateRange(i.StartDate, i.EndDate)*)
-(*}*)
-(**)
+(*TODO: finish this -> test the release.is_valid function*)
+(*let%expect_test "release.is_valid" =*)
+
+(*  ReleaseInfo.make ~root_view_id:None ~releaser_id:"RELEASER_ID" ~owner_id:"OWNER_ID" ~owner_name:"OWNER_NAME"*)
 (*func (i ReleaseInfo) String() string {*)
 (*	startDateStr := "nil"*)
 (*	if i.StartDate != nil {*)
