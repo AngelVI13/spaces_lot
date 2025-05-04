@@ -72,3 +72,9 @@ let make_floor_str floor =
     match abs floor with 1 -> "st" | 2 -> "nd" | 3 -> "rd" | _ -> "th"
   in
   sprintf "%d%s floor" floor postfix
+
+let make_list ~size ~default =
+  let rec make_list' left default l =
+    if left = 0 then l else make_list' (left - 1) default (default :: l)
+  in
+  make_list' size default []

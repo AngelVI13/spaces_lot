@@ -80,12 +80,14 @@ module ReleaseInfo = struct
       end_date *)
   let is_valid r =
     if not (is_data_present r) then
+      (*NOTE: this in theory checks more than just date information but the other*)
+      (*information is compulsory so it is not reflected in the error message*)
       Or_error.error_s
         [%message
           "Missing date information for temporary release of space"
-            (r.space_key : Space_key.t)
-            (r.start_date : _ option)
-            (r.end_date : _ option)]
+            ~space:(r.space_key : Space_key.t)
+            ~start:(r.start_date : Date.t option)
+            ~end_:(r.end_date : Date.t option)]
     else
       let today = Utils.today_date () in
       let start_date, end_date =
@@ -95,30 +97,23 @@ module ReleaseInfo = struct
       in
       Utils.is_date_range_valid ~today ~start_date ~end_date
 
+  let date_range r =
+    [%message
+      "range"
+        ~_:(r.start_date : Date.t option)
+        "->"
+        ~_:(r.end_date : Date.t option)]
+    |> Sexp.to_string_hum
+
   let show_custom r =
     (*NOTE: this uses https://github.com/janestreet/ppx_sexp_message*)
     [%message
       "ReleaseInfo"
         ~space:(r.space_key : Space_key.t)
         ~userName:(r.owner_name : string)
-        (r.start_date : Date.t option)
-        (r.end_date : Date.t option)
+        (date_range r)
         ~id:(r.unique_id : int option)]
     |> Sexp.to_string_hum
-
-  (**)
-  (*func (i ReleaseInfo) DateRange() string {*)
-  (*	startDateStr := "nil"*)
-  (*	if i.StartDate != nil {*)
-  (*		startDateStr = i.StartDate.Format("2006-01-02")*)
-  (*	}*)
-  (**)
-  (*	endDateStr := "nil"*)
-  (*	if i.EndDate != nil {*)
-  (*		endDateStr = i.EndDate.Format("2006-01-02")*)
-  (*	}*)
-  (*	return fmt.Sprintf("%s -> %s", startDateStr, endDateStr)*)
-  (*}*)
 end
 
 let print_is_valid_result r =
@@ -139,8 +134,25 @@ let%expect_test "release.show_custom" =
   printf "%s" (ReleaseInfo.show_custom r);
   [%expect
     {|
-    (ReleaseInfo (space "-2nd floor 120") (userName OWNER_NAME) (r.start_date ())
-     (r.end_date ()) (id ()))
+    (ReleaseInfo (space "-2nd floor 120") (userName OWNER_NAME)
+     "(range () -> ())" (id ()))
+    |}]
+
+let%expect_test "release.is_valid.missing_owner" =
+  let r = make_test_release in
+  let r =
+    {
+      r with
+      owner_id = "";
+      start_date = Some (Date.of_string "2025-04-27");
+      end_date = Some (Date.of_string "2025-04-26");
+    }
+  in
+  print_is_valid_result r;
+  [%expect
+    {|
+    Release is not valid: ("Missing date information for temporary release of space"
+     (space "-2nd floor 120") (start (2025-04-27)) (end_ (2025-04-26)))
     |}]
 
 let%expect_test "release.is_valid.missing_start_end" =
@@ -149,7 +161,7 @@ let%expect_test "release.is_valid.missing_start_end" =
   [%expect
     {|
     Release is not valid: ("Missing date information for temporary release of space"
-     (r.space_key "-2nd floor 120") (r.start_date ()) (r.end_date ()))
+     (space "-2nd floor 120") (start ()) (end_ ()))
     |}]
 
 let%expect_test "release.is_valid.dates_present_but_range_incorrect" =
@@ -165,8 +177,8 @@ let%expect_test "release.is_valid.dates_present_but_range_incorrect" =
   [%expect
     {| Release is not valid: ("Start date is in the past" (start_str 2025-04-27)) |}]
 
-(*TODO: this test is bad because the `ReleaseInfo.is_valid` is based on
-  today's date. Thats why I'm using dates in the far future to test this*)
+(* NOTE: this test is bad because the `ReleaseInfo.is_valid` is based on
+   today's date. Thats why I'm using dates in the far future to test this*)
 let%expect_test "release.is_valid" =
   let r = make_test_release in
   let r =
@@ -178,3 +190,23 @@ let%expect_test "release.is_valid" =
   in
   print_is_valid_result r;
   [%expect {| Release is valid |}]
+
+let%expect_test "release.date_range.both_dates_present" =
+  let r = make_test_release in
+  let r =
+    {
+      r with
+      start_date = Some (Date.of_string "2025-04-26");
+      end_date = Some (Date.of_string "2025-04-28");
+    }
+  in
+  printf "%s" (ReleaseInfo.date_range r);
+  [%expect {| (range (2025-04-26) -> (2025-04-28)) |}]
+
+let%expect_test "release.date_range.dates_missing" =
+  let r = make_test_release in
+  let r =
+    { r with start_date = Some (Date.of_string "2025-04-26"); end_date = None }
+  in
+  printf "%s" (ReleaseInfo.date_range r);
+  [%expect {| (range (2025-04-26) -> ()) |}]
