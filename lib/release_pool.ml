@@ -47,6 +47,19 @@ module ReleasePool = struct
     match List.findi ~f:(fun _ value -> Option.is_none value) p.data with
     | None -> None
     | Some (i, _) -> Some i
+
+  (*let put p release = *)
+
+  (*func (p *ReleasePool) Put(v *ReleaseInfo) {*)
+  (*	idx := p.freeIdx()*)
+  (*	if idx == -1 {*)
+  (*		p.grow(2 * p.Capacity)*)
+  (*		idx = p.freeIdx()*)
+  (*	}*)
+  (**)
+  (*	v.UniqueId = idx*)
+  (*	p.Data[idx] = v*)
+  (*}*)
 end
 
 let%expect_test "find_free.all_empty" =
@@ -57,27 +70,29 @@ let%expect_test "find_free.all_empty" =
   printf "%s" out;
   [%expect {| (index (0)) |}]
 
-(*TODO: finish this*)
-let%expect_test "find_free.all_empty" =
-  let p = ReleasePool.make () in
-  let p = { p with capacity = p.capacity + 1; data = None :: p.data } in
+let%expect_test "find_free.first_taken" =
+  let p = ReleasePool.make ~capacity:3 () in
+  let new_data = [ Some Release.make_test_release; None; None ] in
+  let p = { p with data = new_data } in
+
   let index = ReleasePool.find_free p in
 
   let out = [%message "" (index : int option)] |> Sexp.to_string_hum in
   printf "%s" out;
-  [%expect {| (index (0)) |}]
+  [%expect {| (index (1)) |}]
 
-(*// freeIdx find first free index in the pool*)
-(*func (p *ReleasePool) freeIdx() int {*)
-(*	for i, v := range p.Data {*)
-(*		if v == nil {*)
-(*			return i*)
-(*		}*)
-(*	}*)
-(**)
-(*	return -1*)
-(*}*)
-(**)
+let%expect_test "find_free.all_taken" =
+  let p = ReleasePool.make ~capacity:3 () in
+  let test_release = Release.make_test_release in
+  let new_data = [ Some test_release; Some test_release; Some test_release ] in
+  let p = { p with data = new_data } in
+
+  let index = ReleasePool.find_free p in
+
+  let out = [%message "" (index : int option)] |> Sexp.to_string_hum in
+  printf "%s" out;
+  [%expect {| (index ()) |}]
+
 (*func (p *ReleasePool) grow(new_size int) {*)
 (*	// Reallocate the whole array with 2x cap*)
 (*	new_data := make([]*ReleaseInfo, new_size)*)
@@ -92,16 +107,6 @@ let%expect_test "find_free.all_empty" =
 (*	p.Capacity = new_size*)
 (*}*)
 (**)
-(*func (p *ReleasePool) Put(v *ReleaseInfo) {*)
-(*	idx := p.freeIdx()*)
-(*	if idx == -1 {*)
-(*		p.grow(2 * p.Capacity)*)
-(*		idx = p.freeIdx()*)
-(*	}*)
-(**)
-(*	v.UniqueId = idx*)
-(*	p.Data[idx] = v*)
-(*}*)
 (**)
 (*// Remove replace the first element of pool that matches the provided*)
 (*// value with an empty value*)
