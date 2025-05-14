@@ -114,6 +114,8 @@ module ReleaseInfo = struct
         (date_range r)
         ~id:(r.unique_id : int option)]
     |> Sexp.to_string_hum
+
+  let with_id r unique_id = { r with unique_id }
 end
 
 let print_is_valid_result r =

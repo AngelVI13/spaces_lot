@@ -28,38 +28,38 @@ open Core
 (**)
 
 module ReleasePool = struct
-  type t = { capacity : int; data : ReleaseInfo.t option list }
+  type t = { capacity : int; data : ReleaseInfo.t option array }
   [@@deriving show]
 
   let make ?(capacity = 10) () =
     (*TODO: add error handling for capacity*)
-    { capacity; data = Utils.make_list ~size:capacity ~default:None }
+    { capacity; data = Array.create ~len:capacity None }
 
+  (*TODO: fix this, its not working*)
   let grow p =
     let cap = p.capacity in
-    {
-      capacity = 2 * cap;
-      data = p.data @ Utils.make_list ~size:cap ~default:None;
-    }
+    Array.blit ~src:p.data ~src_pos:(cap - 1)
+      ~dst:(Array.create ~len:cap None)
+      ~dst_pos:cap ~len:cap;
+    { p with capacity = 2 * cap }
 
   (** Returns the index of the first free space of the pool *)
   let find_free p =
-    match List.findi ~f:(fun _ value -> Option.is_none value) p.data with
+    match Array.findi ~f:(fun _ value -> Option.is_none value) p.data with
     | None -> None
     | Some (i, _) -> Some i
 
-  (*let put p release = *)
-
-  (*func (p *ReleasePool) Put(v *ReleaseInfo) {*)
-  (*	idx := p.freeIdx()*)
-  (*	if idx == -1 {*)
-  (*		p.grow(2 * p.Capacity)*)
-  (*		idx = p.freeIdx()*)
-  (*	}*)
-  (**)
-  (*	v.UniqueId = idx*)
-  (*	p.Data[idx] = v*)
-  (*}*)
+  let put p release =
+    let p, idx =
+      match find_free p with
+      | None -> (
+          let p = grow p in
+          match find_free p with None -> assert false | Some i -> (p, i))
+      | Some i -> (p, i)
+    in
+    let release = ReleaseInfo.with_id release (Some idx) in
+    Array.set p.data idx (Some release);
+    p
 end
 
 let%expect_test "find_free.all_empty" =
@@ -72,7 +72,7 @@ let%expect_test "find_free.all_empty" =
 
 let%expect_test "find_free.first_taken" =
   let p = ReleasePool.make ~capacity:3 () in
-  let new_data = [ Some Release.make_test_release; None; None ] in
+  let new_data = [| Some Release.make_test_release; None; None |] in
   let p = { p with data = new_data } in
 
   let index = ReleasePool.find_free p in
@@ -84,7 +84,9 @@ let%expect_test "find_free.first_taken" =
 let%expect_test "find_free.all_taken" =
   let p = ReleasePool.make ~capacity:3 () in
   let test_release = Release.make_test_release in
-  let new_data = [ Some test_release; Some test_release; Some test_release ] in
+  let new_data =
+    [| Some test_release; Some test_release; Some test_release |]
+  in
   let p = { p with data = new_data } in
 
   let index = ReleasePool.find_free p in
@@ -92,6 +94,68 @@ let%expect_test "find_free.all_taken" =
   let out = [%message "" (index : int option)] |> Sexp.to_string_hum in
   printf "%s" out;
   [%expect {| (index ()) |}]
+
+let%expect_test "put.without_growing" =
+  let p = ReleasePool.make ~capacity:3 () in
+  let test_release = Release.make_test_release in
+
+  let p = ReleasePool.put p test_release in
+
+  printf "%s" (ReleasePool.show p);
+  [%expect
+    {|
+    { Release_pool.ReleasePool.capacity = 3;
+      data =
+      [|(Some { Release.ReleaseInfo.releaser_id = "RELEASER_ID";
+                owner_id = "OWNER_ID"; owner_name = "OWNER_NAME";
+                space_key = "-2nd floor 120"; start_date = <empty>;
+                end_date = <empty>; cancelled = false; submitted = false;
+                submitted_time = <empty>; unique_id = (Some 0); active = false;
+                active_time = <empty>;
+                created_time = 2025-05-14 17:30:09.422412902Z;
+                root_view_id = None; view_id = None });
+        None; None|]
+      }
+    |}];
+  let p = ReleasePool.put p test_release in
+
+  printf "%s" (ReleasePool.show p);
+  [%expect
+    {|
+    { Release_pool.ReleasePool.capacity = 3;
+      data =
+      [|(Some { Release.ReleaseInfo.releaser_id = "RELEASER_ID";
+                owner_id = "OWNER_ID"; owner_name = "OWNER_NAME";
+                space_key = "-2nd floor 120"; start_date = <empty>;
+                end_date = <empty>; cancelled = false; submitted = false;
+                submitted_time = <empty>; unique_id = (Some 0); active = false;
+                active_time = <empty>;
+                created_time = 2025-05-14 17:30:09.422412902Z;
+                root_view_id = None; view_id = None });
+        (Some { Release.ReleaseInfo.releaser_id = "RELEASER_ID";
+                owner_id = "OWNER_ID"; owner_name = "OWNER_NAME";
+                space_key = "-2nd floor 120"; start_date = <empty>;
+                end_date = <empty>; cancelled = false; submitted = false;
+                submitted_time = <empty>; unique_id = (Some 1); active = false;
+                active_time = <empty>;
+                created_time = 2025-05-14 17:30:09.422412902Z;
+                root_view_id = None; view_id = None });
+        None|]
+      }
+    |}]
+
+let%expect_test "find_free.all_taken" =
+  let p = ReleasePool.make ~capacity:3 () in
+  let test_release = Release.make_test_release in
+  let new_data =
+    [| Some test_release; Some test_release; Some test_release |]
+  in
+  let p = { p with data = new_data } in
+
+  let p = ReleasePool.put p test_release in
+
+  printf "%s" (ReleasePool.show p);
+  [%expect {| |}]
 
 (*func (p *ReleasePool) grow(new_size int) {*)
 (*	// Reallocate the whole array with 2x cap*)
