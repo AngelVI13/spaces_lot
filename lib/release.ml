@@ -1,4 +1,5 @@
 open Core
+module Time_ns = Time_ns_unix
 
 module ReleaseInfo = struct
   type t = {
@@ -10,18 +11,19 @@ module ReleaseInfo = struct
     end_date : Date.t option; [@printer Utils.pp_date_opt]
     cancelled : bool;
     submitted : bool;
-    submitted_time : Time_ns.t option; [@printer Utils.pp_time_opt]
+    submitted_time : (Time_ns.t option[@sexp.opaque]);
+        [@printer Utils.pp_time_opt]
     unique_id : int option;
     active : bool;
-    active_time : Time_ns.t option; [@printer Utils.pp_time_opt]
-    created_time : Time_ns.t; [@printer Utils.pp_time]
+    active_time : (Time_ns.t option[@sexp.opaque]); [@printer Utils.pp_time_opt]
+    created_time : (Time_ns.t[@sexp.opaque]); [@printer Utils.pp_time]
     (* These are only used while the user is choosing date range to refer*)
     (* between space selected and release range selected (i.e. between booking modal*)
     (* and corresponding release modal)*)
     root_view_id : string option;
     view_id : string option;
   }
-  [@@deriving show]
+  [@@deriving show, sexp]
 
   let make ~root_view_id ~releaser_id ~owner_id ~owner_name ~space_key =
     {

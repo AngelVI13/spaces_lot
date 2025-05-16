@@ -221,14 +221,17 @@ let%expect_test "get_by_idx.existing_id" =
   let p = ReleasePool.put p test_release in
 
   let res = ReleasePool.get_by_idx p 1 in
-  printf "%s"
-    (match res with
-    | Error e -> Error.to_string_hum e
-    | Ok res -> (
-        match res with
-        | None -> "None"
-        | Some res -> sprintf "%d" (Option.value ~default:(-1) res.unique_id)));
-  [%expect {| 1 |}]
+  [%message "" ~_:(res : (ReleaseInfo.t option, Error.t) result)]
+  |> Sexp.to_string_hum |> printf "%s";
+  [%expect
+    {|
+    (Ok
+     (((releaser_id RELEASER_ID) (owner_id OWNER_ID) (owner_name OWNER_NAME)
+       (space_key "-2nd floor 120") (start_date ()) (end_date ())
+       (cancelled false) (submitted false) (submitted_time <opaque>)
+       (unique_id (1)) (active false) (active_time <opaque>)
+       (created_time <opaque>) (root_view_id ()) (view_id ()))))
+    |}]
 
 let%expect_test "get_by_idx.non_existing_id" =
   let p = ReleasePool.make ~capacity:2 () in
@@ -237,14 +240,9 @@ let%expect_test "get_by_idx.non_existing_id" =
   let p = ReleasePool.put p test_release in
 
   let res = ReleasePool.get_by_idx p 3 in
-  printf "%s"
-    (match res with
-    | Error e -> Error.to_string_hum e
-    | Ok res -> (
-        match res with
-        | None -> "None"
-        | Some res -> sprintf "%d" (Option.value ~default:(-1) res.unique_id)));
-  [%expect {| ("idx out of range" (idx 3) (p.capacity 2)) |}]
+  [%message "" ~_:(res : (ReleaseInfo.t option, Error.t) result)]
+  |> Sexp.to_string_hum |> printf "%s";
+  [%expect {| (Error ("idx out of range" (idx 3) (p.capacity 2))) |}]
 
 let%expect_test "get_by_root_view_id.existing_id" =
   let p = ReleasePool.make ~capacity:2 () in
@@ -253,12 +251,17 @@ let%expect_test "get_by_root_view_id.existing_id" =
   let p = ReleasePool.put p test_release in
 
   let res = ReleasePool.get_by_root_view_id p "12345" in
-  printf "%s"
-    (match res with
-    | None -> "No release"
-    | Some release ->
-        sprintf "%d" (Option.value ~default:(-1) release.unique_id));
-  [%expect {| 0 |}]
+  [%message "" (res : ReleaseInfo.t option)]
+  |> Sexp.to_string_hum |> printf "%s";
+  [%expect
+    {|
+    (res
+     (((releaser_id RELEASER_ID) (owner_id OWNER_ID) (owner_name OWNER_NAME)
+       (space_key "-2nd floor 120") (start_date ()) (end_date ())
+       (cancelled false) (submitted false) (submitted_time <opaque>)
+       (unique_id (0)) (active false) (active_time <opaque>)
+       (created_time <opaque>) (root_view_id (12345)) (view_id ()))))
+    |}]
 
 let%expect_test "get_by_root_view_id.non_existing_id" =
   let p = ReleasePool.make ~capacity:2 () in
@@ -267,12 +270,9 @@ let%expect_test "get_by_root_view_id.non_existing_id" =
   let p = ReleasePool.put p test_release in
 
   let res = ReleasePool.get_by_root_view_id p "12" in
-  printf "%s"
-    (match res with
-    | None -> "No release"
-    | Some release ->
-        sprintf "%d" (Option.value ~default:(-1) release.unique_id));
-  [%expect {| No release |}]
+  [%message "" (res : ReleaseInfo.t option)]
+  |> Sexp.to_string_hum |> printf "%s";
+  [%expect {| (res ()) |}]
 
 let%expect_test "get_by_view_id.existing_id" =
   let p = ReleasePool.make ~capacity:2 () in
@@ -281,12 +281,17 @@ let%expect_test "get_by_view_id.existing_id" =
   let p = ReleasePool.put p test_release in
 
   let res = ReleasePool.get_by_view_id p "12345" in
-  printf "%s"
-    (match res with
-    | None -> "No release"
-    | Some release ->
-        sprintf "%d" (Option.value ~default:(-1) release.unique_id));
-  [%expect {| 0 |}]
+  [%message "" (res : ReleaseInfo.t option)]
+  |> Sexp.to_string_hum |> printf "%s";
+  [%expect
+    {|
+    (res
+     (((releaser_id RELEASER_ID) (owner_id OWNER_ID) (owner_name OWNER_NAME)
+       (space_key "-2nd floor 120") (start_date ()) (end_date ())
+       (cancelled false) (submitted false) (submitted_time <opaque>)
+       (unique_id (0)) (active false) (active_time <opaque>)
+       (created_time <opaque>) (root_view_id ()) (view_id (12345)))))
+    |}]
 
 let%expect_test "get_by_view_id.non_existing_id" =
   let p = ReleasePool.make ~capacity:2 () in
@@ -295,12 +300,9 @@ let%expect_test "get_by_view_id.non_existing_id" =
   let p = ReleasePool.put p test_release in
 
   let res = ReleasePool.get_by_view_id p "12" in
-  printf "%s"
-    (match res with
-    | None -> "No release"
-    | Some release ->
-        sprintf "%d" (Option.value ~default:(-1) release.unique_id));
-  [%expect {| No release |}]
+  [%message "" (res : ReleaseInfo.t option)]
+  |> Sexp.to_string_hum |> printf "%s";
+  [%expect {| (res ()) |}]
 
 let%expect_test "all.no_releases" =
   let p = ReleasePool.make ~capacity:2 () in
@@ -323,12 +325,9 @@ let%expect_test "active.no_releases" =
   let p = ReleasePool.make ~capacity:2 () in
 
   let res = ReleasePool.active p in
-  printf "%s"
-    (match res with
-    | None -> "No release"
-    | Some release ->
-        sprintf "%d" (Option.value ~default:(-1) release.unique_id));
-  [%expect {| No release |}]
+  [%message "" (res : ReleaseInfo.t option)]
+  |> Sexp.to_string_hum |> printf "%s";
+  [%expect {| (res ()) |}]
 
 let%expect_test "active.existing_releases" =
   let p = ReleasePool.make ~capacity:2 () in
@@ -338,9 +337,14 @@ let%expect_test "active.existing_releases" =
   let p = ReleasePool.put p test_release_active in
 
   let res = ReleasePool.active p in
-  printf "%s"
-    (match res with
-    | None -> "No release"
-    | Some release ->
-        sprintf "%d" (Option.value ~default:(-1) release.unique_id));
-  [%expect {| 1 |}]
+  [%message "" (res : ReleaseInfo.t option)]
+  |> Sexp.to_string_hum |> printf "%s";
+  [%expect
+    {|
+    (res
+     (((releaser_id RELEASER_ID) (owner_id OWNER_ID) (owner_name OWNER_NAME)
+       (space_key "-2nd floor 120") (start_date ()) (end_date ())
+       (cancelled false) (submitted false) (submitted_time <opaque>)
+       (unique_id (1)) (active true) (active_time <opaque>)
+       (created_time <opaque>) (root_view_id ()) (view_id ()))))
+    |}]
