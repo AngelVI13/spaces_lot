@@ -1,22 +1,5 @@
 open Core
 
-let empty_val = "<empty>"
-let pp_time fmt time = Format.fprintf fmt "%s" (Time_ns.to_string_utc time)
-
-let pp_time_opt fmt = function
-  | None -> Format.fprintf fmt "<empty>"
-  | Some time -> Format.fprintf fmt "%s" (Time_ns.to_string_utc time)
-
-let pp_date_opt fmt = function
-  | None -> Format.fprintf fmt "<empty>"
-  | Some time -> Format.fprintf fmt "%s" (Date.to_string time)
-
-let show_date_opt = function
-  | None -> empty_val
-  | Some date -> Date.to_string date
-
-let show_int_opt = function None -> empty_val | Some i -> sprintf "%d" i
-
 let today_date () =
   let now = Time_ns.now () in
   (*NOTE: to use more complex time utilities (timezones etc.) you have to add

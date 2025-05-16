@@ -9,16 +9,15 @@ module ReleaseInfo = struct
     owner_id : string;
     owner_name : string;
     space_key : Space_key.t;
-    start_date : Date.t option; [@printer Utils.pp_date_opt]
-    end_date : Date.t option; [@printer Utils.pp_date_opt]
+    start_date : Date.t option;
+    end_date : Date.t option;
     cancelled : bool;
     submitted : bool;
     submitted_time : (Time_ns.t option[@sexp.opaque]);
-        [@printer Utils.pp_time_opt]
     unique_id : int option;
     active : bool;
-    active_time : (Time_ns.t option[@sexp.opaque]); [@printer Utils.pp_time_opt]
-    created_time : (Time_ns.t[@sexp.opaque]); [@printer Utils.pp_time]
+    active_time : (Time_ns.t option[@sexp.opaque]);
+    created_time : (Time_ns.t[@sexp.opaque]);
     (* These are only used while the user is choosing date range to refer*)
     (* between space selected and release range selected (i.e. between booking modal*)
     (* and corresponding release modal)*)

@@ -1,4 +1,5 @@
 open Core
+open Import
 
 module Space = struct
   type t = {
@@ -10,7 +11,7 @@ module Space = struct
     autoRelease : bool;
     reservedBy : string;
     reservedById : string;
-    reservedTime : Time_ns.t; [@printer Utils.pp_time]
+    reservedTime : Time_ns.t;
   }
   [@@deriving show]
 
