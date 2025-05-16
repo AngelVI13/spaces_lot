@@ -73,8 +73,6 @@ module ReleasePool = struct
                sprintf "%s; %d" acc (Option.value ~default:(-1) r.unique_id))
          p.data)
 
-  (*TODO: test all of the following methods*)
-
   (*TODO: the following 2 are identical except the field they are checking - parameterize somehow?*)
   let get_by_root_view_id p root_view_id =
     let filtered =
@@ -247,3 +245,102 @@ let%expect_test "get_by_idx.non_existing_id" =
         | None -> "None"
         | Some res -> sprintf "%d" (Option.value ~default:(-1) res.unique_id)));
   [%expect {| ("idx out of range" (idx 3) (p.capacity 2)) |}]
+
+let%expect_test "get_by_root_view_id.existing_id" =
+  let p = ReleasePool.make ~capacity:2 () in
+  let test_release = Release.make_test_release in
+  let test_release = { test_release with root_view_id = Some "12345" } in
+  let p = ReleasePool.put p test_release in
+
+  let res = ReleasePool.get_by_root_view_id p "12345" in
+  printf "%s"
+    (match res with
+    | None -> "No release"
+    | Some release ->
+        sprintf "%d" (Option.value ~default:(-1) release.unique_id));
+  [%expect {| 0 |}]
+
+let%expect_test "get_by_root_view_id.non_existing_id" =
+  let p = ReleasePool.make ~capacity:2 () in
+  let test_release = Release.make_test_release in
+  let test_release = { test_release with root_view_id = Some "12345" } in
+  let p = ReleasePool.put p test_release in
+
+  let res = ReleasePool.get_by_root_view_id p "12" in
+  printf "%s"
+    (match res with
+    | None -> "No release"
+    | Some release ->
+        sprintf "%d" (Option.value ~default:(-1) release.unique_id));
+  [%expect {| No release |}]
+
+let%expect_test "get_by_view_id.existing_id" =
+  let p = ReleasePool.make ~capacity:2 () in
+  let test_release = Release.make_test_release in
+  let test_release = { test_release with view_id = Some "12345" } in
+  let p = ReleasePool.put p test_release in
+
+  let res = ReleasePool.get_by_view_id p "12345" in
+  printf "%s"
+    (match res with
+    | None -> "No release"
+    | Some release ->
+        sprintf "%d" (Option.value ~default:(-1) release.unique_id));
+  [%expect {| 0 |}]
+
+let%expect_test "get_by_view_id.non_existing_id" =
+  let p = ReleasePool.make ~capacity:2 () in
+  let test_release = Release.make_test_release in
+  let test_release = { test_release with view_id = Some "12345" } in
+  let p = ReleasePool.put p test_release in
+
+  let res = ReleasePool.get_by_view_id p "12" in
+  printf "%s"
+    (match res with
+    | None -> "No release"
+    | Some release ->
+        sprintf "%d" (Option.value ~default:(-1) release.unique_id));
+  [%expect {| No release |}]
+
+let%expect_test "all.no_releases" =
+  let p = ReleasePool.make ~capacity:2 () in
+
+  let res = ReleasePool.all p in
+  printf "%d" (List.length res);
+  [%expect {| 0 |}]
+
+let%expect_test "all.existing_releases" =
+  let p = ReleasePool.make ~capacity:2 () in
+  let test_release = Release.make_test_release in
+  let p = ReleasePool.put p test_release in
+  let p = ReleasePool.put p test_release in
+
+  let res = ReleasePool.all p in
+  printf "%d" (List.length res);
+  [%expect {| 2 |}]
+
+let%expect_test "active.no_releases" =
+  let p = ReleasePool.make ~capacity:2 () in
+
+  let res = ReleasePool.active p in
+  printf "%s"
+    (match res with
+    | None -> "No release"
+    | Some release ->
+        sprintf "%d" (Option.value ~default:(-1) release.unique_id));
+  [%expect {| No release |}]
+
+let%expect_test "active.existing_releases" =
+  let p = ReleasePool.make ~capacity:2 () in
+  let test_release = Release.make_test_release in
+  let test_release_active = { test_release with active = true } in
+  let p = ReleasePool.put p test_release in
+  let p = ReleasePool.put p test_release_active in
+
+  let res = ReleasePool.active p in
+  printf "%s"
+    (match res with
+    | None -> "No release"
+    | Some release ->
+        sprintf "%d" (Option.value ~default:(-1) release.unique_id));
+  [%expect {| 1 |}]
