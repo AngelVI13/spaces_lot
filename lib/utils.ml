@@ -3,7 +3,7 @@ open Core
 let today_date () =
   let now = Time_ns.now () in
   (*NOTE: to use more complex time utilities (timezones etc.) you have to add
-  `core_unix` and `core_unix.time_unix` libraries in your `dune` file.*)
+  `core_unix.time_ns_unix` libraries in your `dune` file.*)
   let today = Time_ns.to_date ~zone:(force Time_float_unix.Zone.local) now in
   today
 

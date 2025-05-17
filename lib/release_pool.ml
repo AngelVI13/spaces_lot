@@ -1,6 +1,5 @@
 open Release
 open Core
-open Poly
 
 (*const defaultRingBufCapacity = 10*)
 (*	ErrEmpty           = errors.New("empty")*)
@@ -80,7 +79,11 @@ module ReleasePool = struct
         ~f:(fun el ->
           match el with
           | None -> false
-          | Some el -> Option.value ~default:"" el.root_view_id = root_view_id)
+          | Some el ->
+              String.compare
+                (Option.value ~default:"" el.root_view_id)
+                root_view_id
+              = 0)
         p.data
     in
     match filtered with [||] -> None | _ -> filtered.(0)
@@ -91,7 +94,8 @@ module ReleasePool = struct
         ~f:(fun el ->
           match el with
           | None -> false
-          | Some el -> Option.value ~default:"" el.view_id = view_id)
+          | Some el ->
+              String.compare (Option.value ~default:"" el.view_id) view_id = 0)
         p.data
     in
     match filtered with [||] -> None | _ -> filtered.(0)
