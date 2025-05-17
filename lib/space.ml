@@ -13,7 +13,7 @@ module Space = struct
     reservedById : string;
     reservedTime : Time_ns.t;
   }
-  [@@deriving show]
+  [@@deriving show, sexp]
 
   let make ~number ~floor ~description =
     {

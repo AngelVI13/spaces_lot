@@ -14,4 +14,4 @@ module T = struct
 end
 
 include T
-include Comparator.Make (T)
+include Comparable.Make (T)

@@ -1,31 +1,37 @@
-open! Core
+open Core
 open Space
-
-(*TODO: how to create a map from an interface type i.e. type behind a .mli file?
-It looks like you just have to expose the comparator witness type -> TEST THIS
- *)
-module SpaceKey1 = struct
-  module T = struct
-    type t = string [@@deriving show, sexp, compare]
-
-    let make ~floor ~number =
-      sprintf "%s %d" (Utils.make_floor_str floor) number
-  end
-
-  include T
-  include Comparator.Make (T)
-end
 
 module Lot = struct
   (*TODO: define type type ReleaseMap map[SpaceKey]*ReleasePool *)
   type t = { filename : string; unit_spaces : Space.t Map.M(Space_key).t }
-  [@@deriving show, sexp]
-  (*type t = {*)
-  (*  filename : string;*)
-  (*  unit_spaces : (Space_key.t, Space.t, Space_key.comparator_witness) Map.t;*)
-  (*}*)
+  [@@deriving sexp]
 
-  let%expect_test "addition_game" =
-    printf "%d" (2 + 2);
-    [%expect {| 4 |}]
+  let pp fmt (t : t) =
+    let open Format in
+    let pp_kv fmt (k, v) =
+      fprintf fmt "@[<2>%s -> %a@]" (Space_key.show k) Space.pp v
+    in
+    fprintf fmt "@[<v>{ filename = %s;@ unit_spaces = {@;<1 2>%a }@] }"
+      t.filename (pp_print_list pp_kv)
+      (Map.to_alist t.unit_spaces)
+
+  let%expect_test "test_map_creation_and_pp" =
+    let space = Space.make ~floor:1 ~number:120 ~description:"test space" in
+    let lot =
+      {
+        filename = "filename.json";
+        unit_spaces = Map.of_alist_exn (module Space_key) [ (space.key, space) ];
+      }
+    in
+    Format.printf "%a" pp lot;
+    [%expect
+      {|
+      { filename = filename.json;
+      unit_spaces = {
+        "1st floor 120" -> { Space.Space.number = 120; floor = 1;
+                             key = "1st floor 120"; description = "test space";
+                             reserved = false; autoRelease = false;
+                             reservedBy = ""; reservedById = "";
+                             reservedTime = 2025-05-17 20:36:01.546454292+03:00 } } }
+      |}]
 end

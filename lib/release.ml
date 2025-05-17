@@ -45,8 +45,6 @@ module ReleaseInfo = struct
       view_id = None;
     }
 
-  let shout fmt = Printf.ksprintf (fun s -> s ^ "!") fmt
-
   let mark_submitted r ~releaser =
     Log.info "ReleaseInfo Submitted: releaser=%s; info=%s" releaser (show r);
     (* Need to reset view IDs as they are no longer needed.*)
@@ -109,7 +107,6 @@ module ReleaseInfo = struct
     |> Sexp.to_string_hum
 
   let show_custom r =
-    (*NOTE: this uses https://github.com/janestreet/ppx_sexp_message*)
     [%message
       "ReleaseInfo"
         ~space:(r.space_key : Space_key.t)
