@@ -32,6 +32,6 @@ module Lot = struct
                              key = "1st floor 120"; description = "test space";
                              reserved = false; autoRelease = false;
                              reservedBy = ""; reservedById = "";
-                             reservedTime = 2025-05-17 20:36:01.546454292+03:00 } } }
+                             reservedTime = <opaque> } } }
       |}]
 end

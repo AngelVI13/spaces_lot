@@ -11,7 +11,7 @@ module Space = struct
     autoRelease : bool;
     reservedBy : string;
     reservedById : string;
-    reservedTime : Time_ns.t;
+    reservedTime : (Time_ns.t[@opaque]);
   }
   [@@deriving show, sexp]
 
@@ -46,6 +46,11 @@ module Space = struct
     | _ when s.floor = other.floor -> s.number < other.number
     | _ ->
         failwith (sprintf "failed to compare %s with %s" (show s) (show other))
+
+  (*TODO: this is not used and can be remove*)
+  let pp_custom fmt (s : t) =
+    Format.fprintf fmt "@[<v>{ number = %d;@ floor = %d;@ description = %s;@] }"
+      s.number s.floor s.description
 end
 
 let%expect_test "props_txt" =
